@@ -1,19 +1,25 @@
-import {useContext, useEffect, useState} from "react";
-import {FaCommentSms, FaFacebookF, FaPlay, FaSpinner, FaStop} from "react-icons/fa6";
+import { useContext, useEffect, useState } from "react";
+import {
+  FaCommentSms,
+  FaFacebookF,
+  FaPlay,
+  FaSpinner,
+  FaStop,
+} from "react-icons/fa6";
 import VolumeControl from "./VolumeControl";
 import Image from "next/image";
-import {PlayerContext} from "@/context/player";
-import {StationContext} from "@/context/station";
-import copy from 'clipboard-copy';
-import Popup from 'reactjs-popup';
-import 'reactjs-popup/dist/index.css';
+import { PlayerContext } from "@/context/player";
+import { StationContext } from "@/context/station";
+import copy from "clipboard-copy";
+import Popup from "reactjs-popup";
+import "reactjs-popup/dist/index.css";
+const axios = require("axios");
 
 const PLAYER_ICONS = {
   PLAY: <FaPlay className="h-6 w-6" />,
   STOP: <FaStop className="h-6 w-6" />,
   SPINNER: <FaSpinner className="h-6 w-6 animate-spin" />,
 };
-const axios = require("axios");
 
 const Player = () => {
   const { player, playerState, setPlayerIsLoaded, currentTrack } =
@@ -22,12 +28,26 @@ const Player = () => {
   const [playerCurrentIcon, setPlayerCurrentIcon] = useState(PLAYER_ICONS.PLAY);
   const [videoUrl, setVideoUrl] = useState(null);
 
-  const shareUrl = currentPlaying?.trackViewUrl || "";
-  const shareText_1 = `I'm listening to station ${
-    station?.name || "Unknown Station"
-  }, song "${currentPlaying?.trackName || "Unknown Song"}" by ${
-    currentPlaying?.artistName || "Unknown Artist"
-  }. Check it out here: `+window.location.href;
+  // States to hold window-dependent info
+  const [currentUrl, setCurrentUrl] = useState("");
+  const [shareText_1, setShareText_1] = useState("");
+  const [shareUrl, setShareUrl] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const url = window.location.href;
+      setCurrentUrl(url);
+      setShareUrl(currentPlaying?.trackViewUrl || "");
+
+      setShareText_1(
+        `I'm listening to station ${
+          station?.name || "Unknown Station"
+        }, song "${currentPlaying?.trackName || "Unknown Song"}" by ${
+          currentPlaying?.artistName || "Unknown Artist"
+        }. Check it out here: ` + url
+      );
+    }
+  }, [currentPlaying, station]);
 
   useEffect(() => {
     if (playerState === "playing") {
@@ -48,7 +68,6 @@ const Player = () => {
     }
   }
 
-
   const fetchLinkedInstagramAccount = async (accessToken) => {
     try {
       const response = await axios.get(`https://graph.facebook.com/v21.0/me`, {
@@ -59,8 +78,6 @@ const Player = () => {
       });
 
       const pages = response.data.accounts.data;
-      console.log("Linked Pages with Instagram Accounts:", pages);
-
       const pageWithIgAccount = pages.find(
         (page) => page.connected_instagram_account
       );
@@ -72,14 +89,14 @@ const Player = () => {
         removeUrl();
         return null;
       }
-      const igAccountId = pageWithIgAccount.connected_instagram_account.id;
-      return igAccountId;
+      return pageWithIgAccount.connected_instagram_account.id;
     } catch (error) {
       console.error("Error fetching linked Instagram account:", error);
     }
   };
 
   const handleOAuthCallback = async () => {
+    if (typeof window === "undefined") return null;
     const urlParams = new URLSearchParams(window.location.search);
     const authorizationCode = urlParams.get("code");
 
@@ -97,11 +114,7 @@ const Player = () => {
           }
         );
 
-        const accessToken = response.data.access_token;
-
-        console.log("User Access Token:", accessToken);
-
-        return accessToken;
+        return response.data.access_token;
       } catch (error) {
         removeUrl();
         console.error(
@@ -110,9 +123,11 @@ const Player = () => {
         );
       }
     }
+    return null;
   };
 
   const initiateOAuthFlow = () => {
+    if (typeof window === "undefined") return;
     const appId = "1662988724646705";
     const redirectUri = window.location.origin;
     const scope =
@@ -127,39 +142,51 @@ const Player = () => {
       window.location.href = authUrl;
     }
   };
+
   const [isCopied, setIsCopied] = useState(false);
   const [open, setOpen] = useState(false);
-  const [iframeValue, setiframeValue]=useState("");
-  const openModal= ()=>{
-    setiframeValue(
-      '<div id="Container" style="padding-bottom:56.25%; position:relative; display:block; width: 100%">'+
-      '<iframe id="UstreamIframe" src="'+window.location.href+'" width="100%" height="100%" style="position:absolute; top:0; left: 0"'+
-      ' allowfullscreen webkitallowfullscreen frameborder="0" referrerpolicy="no-referrer-when-downgrade"></iframe></div>'
-    );
+  const [iframeValue, setiframeValue] = useState("");
+
+  const openModal = () => {
+    if (typeof window !== "undefined") {
+      setiframeValue(
+        '<div id="Container" style="padding-bottom:56.25%; position:relative; display:block; width: 100%">' +
+          '<iframe id="UstreamIframe" src="' +
+          window.location.href +
+          '" width="100%" height="100%" style="position:absolute; top:0; left: 0"' +
+          ' allowfullscreen webkitallowfullscreen frameborder="0" referrerpolicy="no-referrer-when-downgrade"></iframe></div>'
+      );
+    }
     setIsCopied(false);
     setOpen(true);
-  }
+  };
   const closeModal = () => setOpen(false);
+
   const iframeShare = async () => {
     try {
-      await copy(window.location.href);
-      document.querySelector('.copy-input').focus();
-      document.querySelector('.copy-input').select();
-      setIsCopied(true);
+      if (typeof window !== "undefined") {
+        await copy(window.location.href);
+        const input = document.querySelector(".copy-input");
+        if (input) {
+          input.focus();
+          input.select();
+        }
+        setIsCopied(true);
+      }
     } catch (error) {
-      console.error('Failed to copy text to clipboard', error);
+      console.error("Failed to copy text to clipboard", error);
     }
   };
 
   const removeUrl = () => {
+    if (typeof window === "undefined") return;
     const urlParams = new URLSearchParams(window.location.search);
     urlParams.delete("code");
 
     const newUrl =
       window.location.origin +
       window.location.pathname +
-      "?" +
-      urlParams.toString();
+      (urlParams.toString() ? "?" + urlParams.toString() : "");
 
     window.history.replaceState(null, "", newUrl);
     localStorage.removeItem("current_player");
@@ -172,7 +199,6 @@ const Player = () => {
     caption
   ) => {
     try {
-      // Step 1: Upload Media
       const mediaResponse = await axios.post(
         `https://graph.facebook.com/v17.0/${instagramAccountId}/media`,
         {
@@ -181,10 +207,7 @@ const Player = () => {
           access_token: accessToken,
         }
       );
-
       const mediaCreationId = mediaResponse.data.id;
-      // alert("mediaCreationId= " + mediaCreationId);
-      // Step 2: Publish Media
       const publishResponse = await axios.post(
         `https://graph.facebook.com/v17.0/${instagramAccountId}/media_publish`,
         {
@@ -192,7 +215,6 @@ const Player = () => {
           access_token: accessToken,
         }
       );
-
       removeUrl();
       alert("Post published successfully:");
       console.log("Post published successfully:", publishResponse.data);
@@ -204,41 +226,33 @@ const Player = () => {
       );
     }
   };
+
   const mainFlow = async () => {
     try {
-      // Step 2: Handle Redirect and Fetch Access Token
       const accessToken = await handleOAuthCallback();
-
-      // Step 3: Fetch Linked Instagram Account
+      if (!accessToken) return;
       const instagramAccountId = await fetchLinkedInstagramAccount(accessToken);
+      if (!instagramAccountId) return;
 
-      // Step 4: Publish to Instagram
       const imageUrl =
         "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/7b/ff/0a/7bff0a9e-6501-7fe6-7173-540602911427/886445058963.jpg/600x600bb.jpg";
-
       const caption = localStorage.getItem("current_player") || shareText_1;
-
-      await publishToInstagram(
-        accessToken,
-        instagramAccountId,
-        imageUrl,
-        caption
-      );
+      await publishToInstagram(accessToken, instagramAccountId, imageUrl, caption);
     } catch (error) {
       console.error("Error in the Instagram publishing flow:", error);
     }
   };
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const authorizationCode = urlParams.get("code");
 
-  if (typeof window !== 'undefined') {
-    const urlParams = new URLSearchParams(window.location.search);
-    const authorizationCode = urlParams.get("code");
-
-    if (authorizationCode) {
-      mainFlow();
+      if (authorizationCode) {
+        mainFlow();
+      }
     }
-
-  }
+  }, []);
 
   return (
     <section className="mx-4 rounded-4xl md:mx-8">
@@ -246,82 +260,44 @@ const Player = () => {
         <div className="relative flex w-full justify-between z-50">
           <div className="flex items-center gap-0 lg:gap-6 group">
             <div className="relative">
-            <Image
-              alt="Album thumbnail image"
-              loading="lazy"
-              width="150"
-              height="150"
-              className="hidden rounded-md shadow-md transition-all duration-200 hover:scale-105 lg:flex"
-              src={currentTrack.artworkURL}
-            />
-              {/* Social sharing icons on hover */}
+              <Image
+                alt="Album thumbnail image"
+                loading="lazy"
+                width={150}
+                height={150}
+                className="hidden rounded-md shadow-md transition-all duration-200 hover:scale-105 lg:flex"
+                src={currentTrack.artworkURL}
+              />
               <div className="social-icons-desktop-box hidden lg:flex absolute top-0 left-0 w-full h-full flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-md">
                 <p className="break-words font-semibold text-black drop-shadow-md truncate line-clamp-2 whitespace-normal md:text-2xl md:leading-normal">Share</p>
                 <div className="lg:flex w-full flex items-center justify-center gap-2 rounded-md">
                   <a
                     href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                    window.location.href
+                      currentUrl
                     )}&quote=${encodeURIComponent(shareText_1)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Share on Facebook"
                     className="text-blue-600 hover:text-blue-600"
                   >
-                    <FaFacebookF size={23}/>
+                    <FaFacebookF size={23} />
                   </a>
-                  {/*   {videoUrl && (
-                      <div className="mt-4">
-                        <video controls className="mb-4" width="300">
-                          <source src={videoUrl} type="video/mp4" />
-                        </video>
-                    <a
-                          href={`https://www.tiktok.com/upload?video=${encodeURIComponent(
-                            videoUrl
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-white hover:text-black bg-pink-500 p-2 rounded-full flex items-center"
-                          aria-label="Share to TikTok"
-                        >
-                          <FaMusic size={18} className="mr-2" />
-                          Share to TikTok
-                        </a>
-                      </div>
-                    )} */}
                   <a
                     href={`https://www.tiktok.com/upload?video=${encodeURIComponent(
-                      window.location.href
+                      currentUrl
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Visit TikTok Profile"
-                    className="text-blue-600  hover:text-blue-600"
-                  >
-
-                    {/*<Image src="/public/tiktok.svg" alt="" height={23} width={23}/>*/}
-                    <Image src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIGZpbGw9IiMyNTYzRUIiIHdpZHRoPSI4MDBweCIgaGVpZ2h0PSI4MDBweCIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbDpzcGFjZT0icHJlc2VydmUiPjxwYXRoIGQ9Ik0xOS41ODkgNi42ODZhNC43OTMgNC43OTMgMCAwIDEtMy43Ny00LjI0NVYyaC0zLjQ0NXYxMy42NzJhMi44OTYgMi44OTYgMCAwIDEtNS4yMDEgMS43NDNsLS4wMDItLjAwMS4wMDIuMDAxYTIuODk1IDIuODk1IDAgMCAxIDMuMTgzLTQuNTF2LTMuNWE2LjMyOSA2LjMyOSAwIDAgMC01LjM5NCAxMC42OTIgNi4zMyA2LjMzIDAgMCAwIDEwLjg1Ny00LjQyNFY4LjY4N2E4LjE4MiA4LjE4MiAwIDAgMCA0Ljc3MyAxLjUyNlY2Ljc5YTQuODMxIDQuODMxIDAgMCAxLTEuMDAzLS4xMDR6Ii8+PC9zdmc+"
-                    alt="" height={23} width={23}/>
-                  </a>
-                  {/*
-                  <a
-                    onClick={initiateOAuthFlow}
-                    aria-label="Share on Instagram"
                     className="text-blue-600 hover:text-blue-600"
                   >
-                    <FaInstagram size={23} />
-                  </a>*/}
-                  {/* <a
-                        href=`instagram://story?background_image=${encodeURIComponent(
-                            station.thumbnail
-                          )}&content_url=${encodeURIComponent(shareText_1)}`
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Visit Instagram Profile"
-                        className="text-blue-600 hover:text-blue-600"
-                      >
-                        <FaInstagram size={23} />
-                      </a> */}
-                  {/* SMS */}
+                    <Image
+                      src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIGZpbGw9IiMyNTYzRUIiIHdpZHRoPSI4MDBweCIgaGVpZ2h0PSI4MDBweCIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbDpzcGFjZT0icHJlc2VydmUiPjxwYXRoIGQ9Ik0xOS41ODkgNi42ODZhNC43OTMgNC43OTMgMCAwIDEtMy43Ny00LjI0NVYyaC0zLjQ0NXYxMy42NzJhMi44OTYgMi44OTYgMCAwIDEtNS4yMDEgMS43NDNsLS4wMDItLjAwMS4wMDIuMDAxYTIuODk1IDIuODk1IDAgMCAxIDMuMTgzLTQuNTF2LTMuNWE2LjMyOSA2LjMyOSAwIDAgMC01LjM5NCAxMC42OTIgNi4zMyA2LjMzIDAgMCAwIDEwLjg1Ny00LjQyNFY4LjY4N2E4LjE4MiA4LjE4MiAwIDAgMCA0Ljc3MyAxLjUyNlY2Ljc5YTQuODMxIDQuODMxIDAgMCAxLTEuMDAzLS4xMDR6Ii8+PC9zdmc+"
+                      alt=""
+                      height={23}
+                      width={23}
+                    />
+                  </a>
                   <a
                     href={`sms:?&body=${encodeURIComponent(
                       `Check out "${shareText_1}"`
@@ -329,7 +305,7 @@ const Player = () => {
                     aria-label="Share via SMS"
                     className="text-green-600 hover:text-green-600"
                   >
-                    <FaCommentSms size={23}/>
+                    <FaCommentSms size={23} />
                   </a>
                   <a
                     href="#"
@@ -337,29 +313,52 @@ const Player = () => {
                     aria-label="Share iframe"
                     className="social-icons-desktop text-blue-600 hover:text-blue-600"
                   >
-                    <Image src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIGZpbGw9IiMwMDAwMDAiIHdpZHRoPSI4MDBweCIgaGVpZ2h0PSI4MDBweCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIyIDIgMjIgMjIiPgogIDxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTkuNzA3MTA2NzgsMTUuMjkyODkzMiBMOC4yOTI4OTMyMiwxNi43MDcxMDY4IEwzLjU4NTc4NjQ0LDEyIEw4LjI5Mjg5MzIyLDcuMjkyODkzMjIgTDkuNzA3MTA2NzgsOC43MDcxMDY3OCBMNi40MTQyMTM1NiwxMiBMOS43MDcxMDY3OCwxNS4yOTI4OTMyIFogTTE0LjI5Mjg5MzIsOC43MDcxMDY3OCBMMTUuNzA3MTA2OCw3LjI5Mjg5MzIyIEwyMC40MTQyMTM2LDEyIEwxNS43MDcxMDY4LDE2LjcwNzEwNjggTDE0LjI5Mjg5MzIsMTUuMjkyODkzMiBMMTcuNTg1Nzg2NCwxMiBMMTQuMjkyODkzMiw4LjcwNzEwNjc4IFogTTExLjk4NjM5MzksMTguMTY0Mzk5IEwxMC4wMTM2MDYxLDE3LjgzNTYwMSBMMTIuMDEzNjA2MSw1LjgzNTYwMTAxIEwxMy45ODYzOTM5LDYuMTY0Mzk4OTkgTDExLjk4NjM5MzksMTguMTY0Mzk5IFoiLz4KPC9zdmc+"
-                      alt="" height={30} width={30} />
+                    <Image
+                      src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIGZpbGw9IiMwMDAwMDAiIHdpZHRoPSI4MDBweCIgaGVpZ2h0PSI4MDBweCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIyIDIgMjIgMjIiPgogIDxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTkuNzA3MTA2NzgsMTUuMjkyODkzMiBMOC4yOTI4OTMyMiwxNi43MDcxMDY4IEwzLjU4NTc4NjQ0LDEyIEw4LjI5Mjg5MzIyLDcuMjkyODkzMjIgTDkuNzA3MTA2NzgsOC43MDcxMDY3OCBMNi40MTQyMTM1NiwxMiBMOS43MDcxMDY3OCwxNS4yOTI4OTMyIFogTTE0LjI5Mjg5MzIsOC43MDcxMDY3OCBMMTUuNzA3MTA2OCw3LjI5Mjg5MzIyIEwyMC40MTQyMTM2LDEyIEwxNS43MDcxMDY4LDE2LjcwNzEwNjggTDE0LjI5Mjg5MzIsMTUuMjkyODkzMiBMMTcuNTg1Nzg2NCwxMiBMMTQuMjkyODkzMiw4LjcwNzEwNjc4IFogTTExLjk4NjM5MzksMTguMTY0Mzk5IEwxMC4wMTM2MDYxLDE3LjgzNTYwMSBMMTIuMDEzNjA2MSw1LjgzNTYwMTAxIEwxMy45ODYzOTM5LDYuMTY0Mzk4OTkgTDExLjk4NjM5MzksMTguMTY0Mzk5IFoiLz4KPC9zdmc+"
+                      alt=""
+                      height={30}
+                      width={30}
+                    />
                   </a>
                   <Popup open={open} closeOnDocumentClick onClose={closeModal}>
                     <div className="modal flex flex-column">
                       <div className="copy-preview">
-                        <iframe className="copy-iframe" src={window.location.href} width="100%" height="100%"
-                                allowfullscreen webkitallowfullscreen frameborder="0"
-                                referrerpolicy="no-referrer-when-downgrade">
-                        </iframe>
+                        <iframe
+                          className="copy-iframe"
+                          src={currentUrl}
+                          width="100%"
+                          height="100%"
+                          allowFullScreen
+                          webkitallowfullscreen="true"
+                          frameBorder="0"
+                          referrerPolicy="no-referrer-when-downgrade"
+                        ></iframe>
                       </div>
                       <div className="flex copy-header">
                         <span className="header">Embed Video</span>
                         <button className="close" onClick={closeModal}>
-                          <Image src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgMCAwIDI0IDI0IiBoZWlnaHQ9IjI0IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIyNCIgZm9jdXNhYmxlPSJmYWxzZSIgYXJpYS1oaWRkZW49InRydWUiIHN0eWxlPSJwb2ludGVyLWV2ZW50czogbm9uZTsgZGlzcGxheTogaW5oZXJpdDsgd2lkdGg6IDEwMCU7IGhlaWdodDogMTAwJTsiPgo8cGF0aCBkPSJtMTIuNzEgMTIgOC4xNSA4LjE1LS43MS43MUwxMiAxMi43MWwtOC4xNSA4LjE1LS43MS0uNzFMMTEuMjkgMTIgMy4xNSAzLjg1bC43MS0uNzFMMTIgMTEuMjlsOC4xNS04LjE1LjcxLjcxTDEyLjcxIDEyeiI+CjwvcGF0aD4KPC9zdmc+"
-                            alt="" height={30} width={30} />
+                          <Image
+                            src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgMCAwIDI0IDI0IiBoZWlnaHQ9IjI0IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIyNCIgZm9jdXNhYmxlPSJmYWxzZSIgYXJpYS1oaWRkZW49InRydWUiIHN0eWxlPSJwb2ludGVyLWV2ZW50czogbm9uZTsgZGlzcGxheTogaW5oZXJpdDsgd2lkdGg6IDEwMCU7IGhlaWdodDogMTAwJTsiPgo8cGF0aCBkPSJtMTIuNzEgMTIgOC4xNSA4LjE1LS43MS43MUwxMiAxMi43MWwtOC4xNSA4LjE1LS43MS0uNzFMMTEuMjkgMTIgMy4xNSAzLjg1bC43MS0uNzFMMTIgMTEuMjlsOC4xNS04LjE1LjcxLjcxTDEyLjcxIDEyeiI+CjwvcGF0aD4KPC9zdmc+"
+                            alt="Close"
+                            height={30}
+                            width={30}
+                          />
                         </button>
                       </div>
-                      <p className="copy-p">Copy & Paste this code to embed the player into your website.</p>
-                      <textarea className="copy-input w-full" type="text" value={iframeValue}>
-                          {iframeValue}
-                        </textarea>
-                      <button className="copy-button actions button text-white" onClick={iframeShare}>
+                      <p className="copy-p">
+                        Copy & Paste this code to embed the player into your
+                        website.
+                      </p>
+                      <textarea
+                        className="copy-input w-full"
+                        type="text"
+                        value={iframeValue}
+                        readOnly
+                      />
+                      <button
+                        className="copy-button actions button text-white"
+                        onClick={iframeShare}
+                      >
                         {isCopied ? "Copied" : "Copy"}
                       </button>
                     </div>
@@ -385,9 +384,7 @@ const Player = () => {
                 type="button"
                 className="rounded-full bg-white p-6 text-black shadow-xl transition-all duration-300 hover:scale-[1.07] md:p-10"
                 aria-label="play music"
-                onClick={() => {
-                  togglePlayer();
-                }}
+                onClick={togglePlayer}
               >
                 {playerCurrentIcon}
               </button>
@@ -397,107 +394,63 @@ const Player = () => {
         <div className="absolute right-0 left-0 bottom-0 h-[50%] bg-gradient-to-b from-[transparent] to-[#000000ba] rounded-2xl lg:rounded-[35px]"></div>
         <div className="group playerBGContainer absolute right-0 left-0 bottom-0 top-0 bg-gradient-to-b from-[transparent] to-[#000000ba] rounded-2xl lg:rounded-[35px] overflow-hidden">
           <div
-            className={"group absolute right-0 left-0 bottom-0 top-0 overflow-hidden bg-cover bg-center bg-no-repeat"}
-            style={{backgroundImage: 'linear-gradient(0deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 40%), url(' + currentTrack.artistImage + ')'}}
-          >
-            {/*
-          <Image
-            alt="Album artist image"
-            priority
-            src={currentTrack.artistImage}
-            fill
-            sizes="100vw"
-            onError={(e) => {
-              e.target.style.display = "none";
-            }}
-            onLoad={(e) => {
-              e.target.style.display = "block";
-            }}
+            className={
+              "group absolute right-0 left-0 bottom-0 top-0 overflow-hidden bg-cover bg-center bg-no-repeat"
+            }
             style={{
-              objectFit: "cover",
+              backgroundImage:
+                "linear-gradient(0deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 40%), url(" +
+                currentTrack.artistImage +
+                ")",
             }}
-          />
-          */}
-              {/* Social sharing icons on hover */}
+          >
             <div
-              className="social-icons-mobile-box absolute top-0 left-0 w-full h-full flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 lg:group-hover:opacity-0 transition-opacity duration-300 rounded-md">
-                <p className="social-icons-desktop-share break-words font-semibold text-black drop-shadow-md truncate line-clamp-2 whitespace-normal md:text-2xl md:leading-normal">Share</p>
-                <div className="lg:flex w-full flex items-center justify-center gap-2 rounded-md">
-                  <a
-                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                    window.location.href
-                    )}&quote=${encodeURIComponent(shareText_1)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Share on Facebook"
-                    className="text-blue-600 hover:text-blue-600"
-                  >
-                    <FaFacebookF size={23} />
-                  </a>
-                  {/*   {videoUrl && (
-                    <div className="mt-4">
-                      <video controls className="mb-4" width="300">
-                        <source src={videoUrl} type="video/mp4" />
-                      </video>
-                  <a
-                        href={`https://www.tiktok.com/upload?video=${encodeURIComponent(
-                          videoUrl
-                        )}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-white hover:text-black bg-pink-500 p-2 rounded-full flex items-center"
-                        aria-label="Share to TikTok"
-                      >
-                        <FaMusic size={18} className="mr-2" />
-                        Share to TikTok
-                      </a>
-                    </div>
-                  )} */}
-                  <a
-                    href={`https://www.tiktok.com/upload?video=${encodeURIComponent(
-                      window.location.href
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Visit TikTok Profile"
-                    className="text-blue-600  hover:text-blue-600"
-                  >
+              className="social-icons-mobile-box absolute top-0 left-0 w-full h-full flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 lg:group-hover:opacity-0 transition-opacity duration-300 rounded-md"
+            >
+              <p className="social-icons-desktop-share break-words font-semibold text-black drop-shadow-md truncate line-clamp-2 whitespace-normal md:text-2xl md:leading-normal">
+                Share
+              </p>
+              <div className="lg:flex w-full flex items-center justify-center gap-2 rounded-md">
+                <a
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                    currentUrl
+                  )}&quote=${encodeURIComponent(shareText_1)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Share on Facebook"
+                  className="text-blue-600 hover:text-blue-600"
+                >
+                  <FaFacebookF size={23} />
+                </a>
 
-                    {/*<Image src="/public/tiktok.svg" alt="" height={23} width={23}/>*/}
-                    <Image src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIGZpbGw9IiMyNTYzRUIiIHdpZHRoPSI4MDBweCIgaGVpZ2h0PSI4MDBweCIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbDpzcGFjZT0icHJlc2VydmUiPjxwYXRoIGQ9Ik0xOS41ODkgNi42ODZhNC43OTMgNC43OTMgMCAwIDEtMy43Ny00LjI0NVYyaC0zLjQ0NXYxMy42NzJhMi44OTYgMi44OTYgMCAwIDEtNS4yMDEgMS43NDNsLS4wMDItLjAwMS4wMDIuMDAxYTIuODk1IDIuODk1IDAgMCAxIDMuMTgzLTQuNTF2LTMuNWE2LjMyOSA2LjMyOSAwIDAgMC01LjM5NCAxMC42OTIgNi4zMyA2LjMzIDAgMCAwIDEwLjg1Ny00LjQyNFY4LjY4N2E4LjE4MiA4LjE4MiAwIDAgMCA0Ljc3MyAxLjUyNlY2Ljc5YTQuODMxIDQuODMxIDAgMCAxLTEuMDAzLS4xMDR6Ii8+PC9zdmc+"
-                    alt="" height={23} width={23}/>
-                  </a>
-                  {/*
-                  <a
-                    onClick={initiateOAuthFlow}
-                    aria-label="Share on Instagram"
-                    className="text-blue-600 hover:text-blue-600"
-                  >
-                    <FaInstagram size={23} />
-                  </a>*/}
-                  {/* <a
-                        href=`instagram://story?background_image=${encodeURIComponent(
-                            station.thumbnail
-                          )}&content_url=${encodeURIComponent(shareText_1)}`
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Visit Instagram Profile"
-                        className="text-blue-600 hover:text-blue-600"
-                      >
-                        <FaInstagram size={23} />
-                      </a> */}
-                  {/* SMS */}
-                  <a
-                    href={`sms:?&body=${encodeURIComponent(
-                      `Check out "${shareText_1}"`
-                    )}`}
-                    aria-label="Share via SMS"
-                    className="text-green-600 hover:text-green-600"
-                  >
-                    <FaCommentSms size={23} />
-                  </a>
-                </div>
+                <a
+                  href={`https://www.tiktok.com/upload?video=${encodeURIComponent(
+                    currentUrl
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Visit TikTok Profile"
+                  className="text-blue-600  hover:text-blue-600"
+                >
+                  <Image
+                    src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IS0tIFVwbG9hZGVkIHRvOiBTVkcgUmVwbywgd3d3LnN2Z3JlcG8uY29tLCBHZW5lcmF0b3I6IFNWRyBSZXBvIE1peGVyIFRvb2xzIC0tPgo8c3ZnIGZpbGw9IiMyNTYzRUIiIHdpZHRoPSI4MDBweCIgaGVpZ2h0PSI4MDBweCIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbDpzcGFjZT0icHJlc2VydmUiPjxwYXRoIGQ9Ik0xOS41ODkgNi42ODZhNC43OTMgNC43OTMgMCAwIDEtMy43Ny00LjI0NVYyaC0zLjQ0NXYxMy42NzJhMi44OTYgMi44OTYgMCAwIDEtNS4yMDEgMS43NDNsLS4wMDItLjAwMS4wMDIuMDAxYTIuODk1IDIuODk1IDAgMCAxIDMuMTgzLTQuNTF2LTMuNWE2LjMyOSA2LjMyOSAwIDAgMC01LjM5NCAxMC42OTIgNi4zMyA2LjMzIDAgMCAwIDEwLjg1Ny00LjQyNFY4LjY4N2E4LjE4MiA4LjE4MiAwIDAgMCA0Ljc3MyAxLjUyNlY2Ljc5YTQuODMxIDQuODMxIDAgMCAxLTEuMDAzLS4xMDR6Ii8+PC9zdmc+"
+                    alt=""
+                    height={23}
+                    width={23}
+                  />
+                </a>
+
+                <a
+                  href={`sms:?&body=${encodeURIComponent(
+                    `Check out "${shareText_1}"`
+                  )}`}
+                  aria-label="Share via SMS"
+                  className="text-green-600 hover:text-green-600"
+                >
+                  <FaCommentSms size={23} />
+                </a>
               </div>
+            </div>
           </div>
         </div>
       </div>
@@ -509,9 +462,7 @@ const Player = () => {
           type="button"
           className="rounded-full p-6 text-black shadow-xl transition-all duration-300 hover:scale-[1.07] md:p-10 z-20 -mt-8 mr-6 border-2 border-kl-primary bg-white"
           aria-label="play music"
-          onClick={() => {
-            togglePlayer();
-          }}
+          onClick={togglePlayer}
         >
           {playerCurrentIcon}
         </button>
