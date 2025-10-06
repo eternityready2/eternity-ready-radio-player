@@ -27,6 +27,13 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="en" suppressHydrationWarning={true}>
+      <head>
+        <script
+            src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8022147088754346"
+            async
+            crossOrigin="anonymous"
+        />
+      </head>
       <body className={inter.className}>
         {adminRequestHeaders ? (
           [children]
@@ -49,7 +56,6 @@ export default function RootLayout({ children }) {
           </main>
         )}
       </body>
-      <GoogleAdsense pId="8022147088754346" />
     </html>
   );
 }
