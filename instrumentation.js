@@ -52,11 +52,13 @@ export async function register() {
 
                                     let searchText = stats.icy.StreamTitle;
                                     if (
-                                        searchText.trim().toLowerCase() ===
-                                        "unknown"
+                                        searchText.trim().toLowerCase() === "unknown" ||
+                                        searchText.trim().toLowerCase() === "-"
                                     ) {
                                         searchText = "";
+                                        stats.icy.StreamTitle = "Unknown";
                                     }
+
                                     const processText =
                                         processSongInfo(searchText);
                                     const encodedSearchText =
