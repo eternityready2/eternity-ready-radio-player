@@ -37,6 +37,7 @@ const LastPlayed = () => {
                   <a
                     className="mb-4 flex w-full flex-1 items-center"
                     href={track.trackViewUrl}
+                    target="_blank"
                   >
                     <Image
                       alt={track?.trackName || "Last Played"}
