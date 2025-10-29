@@ -46,6 +46,11 @@ export default function Page() {
           currentStation.backgroundImage = new File([], "");
           currentStation.isDefault = currentStation.isDefault === 1;
           currentStation.isActive = currentStation.isActive === 1;
+          currentStation.homepage = currentStation.homepage || "";
+          currentStation.telephone = currentStation.telephone || "";
+          currentStation.email = currentStation.email || "";
+          currentStation.location = currentStation.location || "";
+          currentStation.address = currentStation.address || "";
           setStation(currentStation);
         } catch (error) {
           console.error("Failed to fetch stations", error);
@@ -65,6 +70,11 @@ export default function Page() {
           logo: "",
           thumbnail: "",
           backgroundImage: "",
+          homepage: "",
+          telephone: "",
+          email: "",
+          location: "",
+          address: "",
         });
       }
     };

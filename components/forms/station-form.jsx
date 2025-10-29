@@ -46,6 +46,11 @@ const formSchema = z
     donateLink: z.string().optional(),
     gtm: z.string().optional(),
     analytics: z.string().optional(),
+    homepage: z.string().optional(),
+    telephone: z.string().optional(),
+    email: z.string().optional(),
+    location: z.string().optional(),
+    address: z.string().optional(),
     logo: z
       .any()
       .refine((files) => files?.length >= 1, { message: "Image is required." })
@@ -207,6 +212,11 @@ export const StationForm = ({ initialData }) => {
       formData.append("url", data.url);
       formData.append("donateLink", data.donateLink);
       formData.append("gtm", data.gtm);
+      formData.append("homepage", data.homepage);
+      formData.append("telephone", data.telephone);
+      formData.append("email", data.email);
+      formData.append("location", data.location);
+      formData.append("address", data.address);
       formData.append("analytics", minifyScript(data.analytics));
       formData.append("advertisements", JSON.stringify(advertisements));
       formData.append("logo", data.logo[0]);
@@ -466,6 +476,102 @@ export const StationForm = ({ initialData }) => {
               )}
             />
           </div>
+          <div className="gap-8 md:grid md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="homepage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Homepage</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={loading}
+                      placeholder="Hompeage"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="gap-8 md:grid md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="telephone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telehone</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={loading}
+                      placeholder="Telephone"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="gap-8 md:grid md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={loading}
+                      placeholder="Email"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="gap-8 md:grid md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Location</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={loading}
+                      placeholder="Location"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="gap-8 md:grid md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={loading}
+                      placeholder="Address"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
           <div className="gap-8 md:grid md:grid-cols-2">
             <FormItem>
               <FormLabel>Advertisements</FormLabel>
