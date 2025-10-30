@@ -47,8 +47,6 @@ const formSchema = z
     gtm: z.string().optional(),
     analytics: z.string().optional(),
     homepage: z.string().optional(),
-    telephone: z.string().optional(),
-    email: z.string().optional(),
     location: z.string().optional(),
     address: z.string().optional(),
     callLetters: z.string().optional(),
@@ -214,9 +212,7 @@ export const StationForm = ({ initialData }) => {
       formData.append("donateLink", data.donateLink);
       formData.append("gtm", data.gtm);
       formData.append("homepage", data.homepage);
-      formData.append("telephone", data.telephone);
       formData.append("callLetters", data.callLetters);
-      formData.append("email", data.email);
       formData.append("location", data.location);
       formData.append("address", data.address);
       formData.append("analytics", minifyScript(data.analytics));
@@ -489,44 +485,6 @@ export const StationForm = ({ initialData }) => {
                     <Input
                       disabled={loading}
                       placeholder="Homepage"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="gap-8 md:grid md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="telephone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telehone</FormLabel>
-                  <FormControl>
-                    <Input
-                      disabled={loading}
-                      placeholder="Telephone"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <div className="gap-8 md:grid md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      disabled={loading}
-                      placeholder="Email"
                       {...field}
                     />
                   </FormControl>

@@ -47,8 +47,6 @@ export default function Page() {
           currentStation.isDefault = currentStation.isDefault === 1;
           currentStation.isActive = currentStation.isActive === 1;
           currentStation.homepage = currentStation.homepage || "";
-          currentStation.telephone = currentStation.telephone || "";
-          currentStation.email = currentStation.email || "";
           currentStation.location = currentStation.location || "";
           currentStation.address = currentStation.address || "";
           currentStation.callLetters = currentStation.callLetters || "";
@@ -72,8 +70,6 @@ export default function Page() {
           thumbnail: "",
           backgroundImage: "",
           homepage: "",
-          telephone: "",
-          email: "",
           location: "",
           address: "",
           callLetters: "",
