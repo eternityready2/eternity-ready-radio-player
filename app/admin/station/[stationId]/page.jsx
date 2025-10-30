@@ -51,6 +51,7 @@ export default function Page() {
           currentStation.email = currentStation.email || "";
           currentStation.location = currentStation.location || "";
           currentStation.address = currentStation.address || "";
+          currentStation.callLetters = currentStation.callLetters || "";
           setStation(currentStation);
         } catch (error) {
           console.error("Failed to fetch stations", error);
@@ -75,6 +76,7 @@ export default function Page() {
           email: "",
           location: "",
           address: "",
+          callLetters: "",
         });
       }
     };

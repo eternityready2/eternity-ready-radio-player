@@ -51,6 +51,7 @@ const formSchema = z
     email: z.string().optional(),
     location: z.string().optional(),
     address: z.string().optional(),
+    callLetters: z.string().optional(),
     logo: z
       .any()
       .refine((files) => files?.length >= 1, { message: "Image is required." })
@@ -214,6 +215,7 @@ export const StationForm = ({ initialData }) => {
       formData.append("gtm", data.gtm);
       formData.append("homepage", data.homepage);
       formData.append("telephone", data.telephone);
+      formData.append("callLetters", data.callLetters);
       formData.append("email", data.email);
       formData.append("location", data.location);
       formData.append("address", data.address);
@@ -486,7 +488,7 @@ export const StationForm = ({ initialData }) => {
                   <FormControl>
                     <Input
                       disabled={loading}
-                      placeholder="Hompeage"
+                      placeholder="Homepage"
                       {...field}
                     />
                   </FormControl>
@@ -571,7 +573,25 @@ export const StationForm = ({ initialData }) => {
               )}
             />
           </div>
-
+          <div className="gap-8 md:grid md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="callLetters"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Call letters</FormLabel>
+                  <FormControl>
+                    <Input
+                      disabled={loading}
+                      placeholder="Call letters"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           <div className="gap-8 md:grid md:grid-cols-2">
             <FormItem>
               <FormLabel>Advertisements</FormLabel>
