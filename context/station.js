@@ -121,15 +121,15 @@ export const StationProvider = ({ children }) => {
             const nowPlaying = await response.json()
             let data;
             if (station.originalUrl == "https://azura.eternityready.com/listen/eternity_ready_radio/radio.mp3") {
-              data = nowPlaying[0].now_playing;
+              data = nowPlaying[0].playing_next;
             }
 
             else if (station.originalUrl == "https://azura.eternityready.com/listen/worship_god_radio/radio.mp3") {
-              data = nowPlaying[1].now_playing;
+              data = nowPlaying[1].playing_next;
             }
 
             else if (station.originalUrl == "https://azura.eternityready.com/listen/eternity_ready_christmas_station/radio.mp3") {
-              data = nowPlaying[2].now_playing;
+              data = nowPlaying[2].playing_next;
             }
             data = [{
               id: data.song.id,
