@@ -34,6 +34,7 @@ export const StationProvider = ({ children }) => {
         const data = await response.json();
         let station_result = data;
         station_result.forEach((station) => {
+          station.originalUrl = station.url;
           station.url = "https://proxy.eternityready.com/?url=" + encodeURIComponent(station.url);
         });
         console.log("Stations loaded", station_result);
@@ -109,10 +110,45 @@ export const StationProvider = ({ children }) => {
     let timeout = null;
     if (station && station.id) {
       const fetchUpcomingTracks = async (stationId) => {
+        console.log('stationToLoad', station);
         if (stationId !== station.id) return;
         if (timeout) clearTimeout(timeout);
         try {
           const TIMEOUT_SECONDS = 5 * 60 * 1000;
+
+          if (station.originalUrl.startsWith("https://azura.eternityready.com")) {
+            const response = await fetch('https://azura.eternityready.com/api/nowplaying');
+            const nowPlaying = await response.json()
+            let data;
+            if (station.originalUrl == "https://azura.eternityready.com/listen/eternity_ready_radio/radio.mp3") {
+              data = nowPlaying[0].now_playing;
+            }
+
+            else if (station.originalUrl == "https://azura.eternityready.com/listen/worship_god_radio/radio.mp3") {
+              data = nowPlaying[1].now_playing;
+            }
+
+            else if (station.originalUrl == "https://azura.eternityready.com/listen/eternity_ready_christmas_station/radio.mp3") {
+              data = nowPlaying[2].now_playing;
+            }
+            data = [{
+              id: data.song.id,
+              artworkURL: data.song.art,
+              groupId: null,
+              stationId: 1,
+              trackId: null,
+              artistId: null,
+              trackName: data.song.title,
+              artistName: data.song.artist,
+              trackViewUrl: null,
+              dateScheduled: null,
+            }];
+            console.log('data', data);
+            setUpcomingTracks(data);
+            setloadingUpcomingTracks(false);
+            return;
+          }
+
           const response = await fetch(
             `/api/station/${stationId}/schedule/upnext`
           );

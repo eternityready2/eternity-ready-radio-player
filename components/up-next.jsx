@@ -13,6 +13,7 @@ import TracksPlaceholder from "./tracks-placeholder";
 const UpNext = () => {
   const { upcomingTracks, loadingUpcomingTracks } = useContext(StationContext);
 
+  console.log('upcoming', upcomingTracks, loadingUpcomingTracks);
   return (
     (loadingUpcomingTracks || upcomingTracks.length) && (
       <section className="mx-auto w-full my-4 max-w-screen-2xl px-4 md:mt-16 lg:px-8">
@@ -59,7 +60,7 @@ const UpNext = () => {
                               second: "2-digit",
                               hour12: true, // Optional: 12-hour format with AM/PM
                             })
-                            : "Invalid date"}
+                            : ""}
                         </p>
                         <p className="text-sm font-bold text-white truncate line-clamp-2 whitespace-normal md:text-base">
                           {track.trackName}
