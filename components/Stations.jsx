@@ -29,6 +29,8 @@ const Stations = () => {
     }
   }
 
+  totalListeners = Math.max(totalListeners, 1);
+
   return (
     <section className="mx-auto w-full my-4 max-w-screen-2xl px-4 md:mt-16 lg:px-8">
       <h3 className="text-lg font-bold text-white mb-2 md:mb-4 md:text-2xl">
