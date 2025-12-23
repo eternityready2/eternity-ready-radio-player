@@ -20,7 +20,7 @@ const Navbar = ({ station }) => {
             />
           )}
         </a>
-        <div className="flex-1 hidden lg:block">
+        <div className="flex-1 items-center justify-center hidden lg:flex">
           <a
             target="_blank"
             className="rounded-full px-4 py-1 font-bold text-white transition-all duration-300 hover:bg-white hover:text-black hover:shadow-lg md:px-7 md:py-2 md:text-lg"
@@ -29,7 +29,7 @@ const Navbar = ({ station }) => {
             {station?.name || ""}
           </a>
         </div>
-        <div className="flex gap-3 md:gap-4">
+        <div className="flex-1 flex justify-end gap-3 md:gap-4">
           <a
             target="_blank"
             className="rounded-full bg-white px-3 py-1 text-sm font-bold text-black shadow-lg transition-all duration-300 md:px-7 md:py-2 md:text-lg"
