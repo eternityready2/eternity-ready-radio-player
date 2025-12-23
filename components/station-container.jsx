@@ -78,7 +78,7 @@ const StationContainer = () => {
         </div>
       </div>
 
-      <div className="z-50 w-full -mt-6 border-b border-white/[.15] pb-4 lg:hidden">
+      <div className="z-50 w-full -mt-6 border-b border-white/[.15] pb-4">
         <a
           target="_blank"
           className="ml-5 font-medium text-white md:ml-12"
