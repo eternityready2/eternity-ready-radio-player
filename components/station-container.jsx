@@ -75,17 +75,29 @@ const StationContainer = () => {
 
         <div className="relative w-full z-10 flex flex-col justify-center max-w-screen-2xl">
           <Player />
+          {!isMobile && (
+            <div className="z-50 w-full mt-6 border-b border-white/[.15] pb-4">
+            <a
+              target="_blank"
+              className="ml-5 font-medium text-white md:ml-12"
+              href="#"
+            >
+            {station?.name || ""} - Active({stationListeners})
+            </a>
+          </div>
+          )}
         </div>
-      </div>
-
-      <div className="z-50 w-full -mt-6 border-b border-white/[.15] pb-4">
-        <a
-          target="_blank"
-          className="ml-5 font-medium text-white md:ml-12"
-          href="#"
-        >
-          {station?.name || ""} - Active({stationListeners})
-        </a>
+        {isMobile && (
+          <div className="z-50 w-full -mt-6 border-b border-white/[.15] pb-4">
+            <a
+              target="_blank"
+              className="ml-5 font-medium text-white md:ml-12"
+              href="#"
+            >
+            {station?.name || ""} - Active({stationListeners})
+            </a>
+          </div>
+        )}
       </div>
     </Fragment>
   );
