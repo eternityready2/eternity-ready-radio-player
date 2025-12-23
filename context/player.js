@@ -45,6 +45,20 @@ export const PlayerProvider = ({ children }) => {
         player.setVolume(volume);
     };
 
+    const [listeners, setListeners] = useState(null);
+    useEffect(() => {
+        async function fetchListeners() {
+            const response = await fetch('https://proxy.eternityready.com/listeners');
+            const result = await response.json();
+            console.log('Listeners: ', result);
+
+            if (result) {
+                setListeners(result);
+            }
+        }
+        fetchListeners();
+    }, [currentPlaying])
+
 // Initialize player with current playing track
     useEffect(() => {
         if (!initalTrackLoaded) {
@@ -225,8 +239,9 @@ export const PlayerProvider = ({ children }) => {
 
 // Fetch Spotify access token
     const getSpotifyAccessToken = async () => {
-        const clientId = process.env.SPOTIFY_CLIENT_ID;
-        const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+        const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
+        const clientSecret = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
+        console.log(clientId, clientSecret);
         const tokenURL = "https://accounts.spotify.com/api/token";
 
         const response = await fetch(tokenURL, {
@@ -441,6 +456,7 @@ export const PlayerProvider = ({ children }) => {
                 setPlayerIsLoaded,
                 changeVolume,
                 currentTrack,
+                listeners
             }}
         >
             {children}

@@ -7,12 +7,19 @@ import Navbar from "@/components/Navbar";
 import MobileBanner from "@/components/mobile-banner";
 import useIsMobile from "@/hooks/useIsMobile";
 import { StationContext } from "@/context/station";
+import { PlayerContext } from "@/context/player";
 import { GoogleTagManager } from "@next/third-parties/google";
 import Head from "next/head";
+
+
 
 const StationContainer = () => {
   const isMobile = useIsMobile();
   const { station } = useContext(StationContext);
+  const { listeners } = useContext(PlayerContext);
+
+  const noPortUrl = station?.originalUrl?.replace(/^https?:\/\//, '');
+  const stationListeners = listeners?.[noPortUrl]?.listeners ?? 1;
 
   useEffect(() => {
     if (station?.analytics) {
@@ -77,7 +84,7 @@ const StationContainer = () => {
           className="ml-5 font-medium text-white md:ml-12"
           href="#"
         >
-          {station?.name || ""}
+          {station?.name || ""} - Active({stationListeners})
         </a>
       </div>
     </Fragment>

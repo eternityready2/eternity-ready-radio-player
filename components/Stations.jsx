@@ -20,13 +20,23 @@ const Stations = () => {
     stationsList,
   } = useContext(StationContext);
 
-  const { player, setPlayerIsLoaded } = useContext(PlayerContext);
+  const { player, setPlayerIsLoaded, listeners } = useContext(PlayerContext);
+
+  let totalListeners = 0;
+  if (listeners) {
+    for (let [key, value] of Object.entries(listeners)) {
+      totalListeners += value.listeners;
+    }
+  }
 
   return (
     <section className="mx-auto w-full my-4 max-w-screen-2xl px-4 md:mt-16 lg:px-8">
       <h3 className="text-lg font-bold text-white mb-2 md:mb-4 md:text-2xl">
         Stations
       </h3>
+      <p className="text-lg text-white mb-2 md:mb-4 md:text-2xl">
+        Currently {totalListeners} Active Listeners across all of our {stationsList.length} stations.
+      </p>
       <Carousel
         opts={{
           dragFree: true,
