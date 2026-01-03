@@ -1,5 +1,6 @@
 import { Inter } from "next/font/google";
 import { headers } from "next/headers";
+import Script from 'next/script';
 import { StationProvider } from "@/context/station";
 import { PlayerProvider } from "@/context/player";
 
