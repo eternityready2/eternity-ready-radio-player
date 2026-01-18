@@ -40,6 +40,7 @@ const formSchema = z
     name: z
       .string()
       .min(3, { message: "Station Name must be at least 3 characters" }),
+    description: z.string().optional(),
     metaPreset: z.string().optional(),
     refUrl: z.string().url({ message: "Please provide a valid URL" }),
     url: z.string().url({ message: "Please provide a valid URL" }),
@@ -208,6 +209,7 @@ export const StationForm = ({ initialData }) => {
         "refUrl",
         data.refUrl.replace(process.env.NEXT_PUBLIC_APP_URL + "/", "").trim()
       );
+      formData.append("description", data.description);
       formData.append("url", data.url);
       formData.append("donateLink", data.donateLink);
       formData.append("gtm", data.gtm);
@@ -370,6 +372,25 @@ export const StationForm = ({ initialData }) => {
                       onChange={(event) => {
                         convertNameToRefURL(event.target.value);
                       }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="gap-8 md:grid md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      disabled={loading}
+                      placeholder="Place the description of station here"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />

@@ -50,6 +50,7 @@ export default function Page() {
           currentStation.location = currentStation.location || "";
           currentStation.address = currentStation.address || "";
           currentStation.callLetters = currentStation.callLetters || "";
+          currentStation.description = currentStation.description || "";
           setStation(currentStation);
         } catch (error) {
           console.error("Failed to fetch stations", error);
@@ -60,6 +61,7 @@ export default function Page() {
           isDefault: false,
           isActive: true,
           name: "",
+          description: "",
           refUrl: "",
           url: "",
           donateLink: "",
