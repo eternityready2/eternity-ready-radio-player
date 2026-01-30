@@ -76,6 +76,7 @@ const StationContainer = () => {
         <div className="relative w-full z-10 flex flex-col justify-center max-w-screen-2xl">
           <Player />
         </div>
+        {/*
         <div className="z-50 w-full -mt-6 border-b border-white/[.15] pb-4 lg:flex lg:justify-center lg:items-center lg:mt-6">
             <a
               target="_blank"
@@ -85,6 +86,7 @@ const StationContainer = () => {
             {station?.name || ""} - Active({stationListeners})
             </a>
           </div>
+          */}
       </div>
     </Fragment>
   );

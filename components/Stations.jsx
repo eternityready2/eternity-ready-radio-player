@@ -36,9 +36,11 @@ const Stations = () => {
       <h3 className="text-lg font-bold text-white mb-2 md:mb-4 md:text-2xl">
         Stations
       </h3>
+      {/*
       <p className="text-lg text-white mb-2 md:mb-4 md:text-2xl">
         Currently {totalListeners} Active Listeners across all of our {stationsList.length} stations.
       </p>
+      */}
       <Carousel
         opts={{
           dragFree: true,
