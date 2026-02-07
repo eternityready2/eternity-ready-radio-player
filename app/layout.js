@@ -48,6 +48,11 @@ export default function RootLayout({ children }) {
             style={{ display: 'none', visibility: 'hidden' }}
           />
         </noscript>
+        <Script src="/js/global-exporter.js" strategy="beforeInteractive" />
+        <Script src="https://eternityready.com/lib/constants.js" strategy="beforeInteractive" />
+        <Script src="https://eternityready.com/lib/session.js" strategy="beforeInteractive" />
+        <Script src="https://eternityready.com/lib/toast.js" strategy="beforeInteractive" />
+        <Script src="https://eternityready.com/lib/utils.js" strategy="beforeInteractive" /> 
         {adminRequestHeaders ? (
           [children]
         ) : (
@@ -63,11 +68,17 @@ export default function RootLayout({ children }) {
                   <Advertisements />
                   {/* <NewThisWeek /> */}
                 </main>
-                <Footer />
+                <eternity-salvation></eternity-salvation>
+                <eternity-footer></eternity-footer>
+                <Script src="https://eternityready.com/lib/eternityHeader.js" strategy="afterInteractive" />
+                <Script src="https://eternityready.com/lib/eternitySalvation.js" strategy="afterInteractive" />
+                <Script src="https://eternityready.com/lib/eternityFooter.js" strategy="afterInteractive" />
+
               </PlayerProvider>
             </StationProvider>
           </main>
         )}
+        
       </body>
     </html>
   );
