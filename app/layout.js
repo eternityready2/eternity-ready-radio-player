@@ -48,18 +48,18 @@ export default function RootLayout({ children }) {
             style={{ display: 'none', visibility: 'hidden' }}
           />
         </noscript>
-        <Script src="/js/global-exporter.js" strategy="beforeInteractive" />
-        <Script src="https://eternityready.com/lib/constants.js" strategy="beforeInteractive" />
-        <Script src="https://eternityready.com/lib/session.js" strategy="beforeInteractive" />
-        <Script src="https://eternityready.com/lib/toast.js" strategy="beforeInteractive" />
-        <Script src="https://eternityready.com/lib/utils.js" strategy="beforeInteractive" /> 
+        <Script src="/js/global-exporter.js" strategy="afterInteractive" />
+        <Script src="https://eternityready.com/lib/constants.js" strategy="afterInteractive" />
+        <Script src="https://eternityready.com/lib/session.js" strategy="afterInteractive" />
+        <Script src="https://eternityready.com/lib/toast.js" strategy="afterInteractive" />
+        <Script src="https://eternityready.com/lib/utils.js" strategy="afterInteractive" /> 
         {adminRequestHeaders ? (
-          [children]
+          <>{children}</>
         ) : (
           <main>
             <StationProvider>
               <PlayerProvider>
-                <main className="bg-[#121212] flex flex-col items-center">
+                <div className="bg-[#121212] flex flex-col items-center">
                   <StationContainer />
                   <Stations />
                   <UpNext />
@@ -67,10 +67,9 @@ export default function RootLayout({ children }) {
                   <StreamOnDemand />
                   <Advertisements />
                   {/* <NewThisWeek /> */}
-                </main>
-                <eternity-salvation></eternity-salvation>
-                <eternity-footer></eternity-footer>
-                <Script src="https://eternityready.com/lib/eternityHeader.js" strategy="afterInteractive" />
+                </div>
+                <eternity-salvation suppressHydrationWarning />
+                <eternity-footer suppressHydrationWarning />
                 <Script src="https://eternityready.com/lib/eternitySalvation.js" strategy="afterInteractive" />
                 <Script src="https://eternityready.com/lib/eternityFooter.js" strategy="afterInteractive" />
 
