@@ -6,6 +6,52 @@ import React, { useState, useEffect } from "react";
 // Create a context for Station authentication and session information
 export const StationContext = React.createContext();
 
+const LEGACY_PROXY_HOST = "proxy.eternityready.com";
+
+/** Recover real stream URL if DB still has the old external proxy (?url=) saved. */
+function unwrapLegacyStreamUrl(url) {
+  if (!url || typeof url !== "string") return url;
+  let current = url.trim();
+  for (let n = 0; n < 5; n++) {
+    if (!current.toLowerCase().includes(LEGACY_PROXY_HOST)) break;
+    try {
+      const u = new URL(current);
+      const inner = u.searchParams.get("url");
+      if (inner) {
+        current = inner;
+        continue;
+      }
+    } catch {
+      /* fall through */
+    }
+    const m = current.match(/[?&]url=([^&]+)/);
+    if (m) {
+      try {
+        current = decodeURIComponent(m[1]);
+        continue;
+      } catch {
+        break;
+      }
+    }
+    break;
+  }
+  return current;
+}
+
+function streamProxyUrlForClient(raw) {
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}/api/stream-proxy?url=${encodeURIComponent(raw)}`;
+}
+
+/** Most streams (e.g. Live365/cdnstream) allow direct browser playback with CORS. Only use /api/stream-proxy if you set NEXT_PUBLIC_USE_STREAM_PROXY=true (proxy must be deployed and reachable). */
+function playbackStreamUrl(raw) {
+  if (process.env.NEXT_PUBLIC_USE_STREAM_PROXY === "true") {
+    return streamProxyUrlForClient(raw);
+  }
+  return raw;
+}
+
 // Station provider component to manage Station authentication and session
 export const StationProvider = ({ children }) => {
   const [stationsList, setStationsList] = useState([]);
@@ -25,6 +71,7 @@ export const StationProvider = ({ children }) => {
       try {
         const response = await fetch("/api/station", {
           method: "GET",
+          cache: "no-store",
         });
 
         if (!response.ok) {
@@ -34,8 +81,16 @@ export const StationProvider = ({ children }) => {
         const data = await response.json();
         let station_result = data;
         station_result.forEach((station) => {
-          station.originalUrl = station.url;
-          station.url = "https://proxy.eternityready.com/?url=" + encodeURIComponent(station.url);
+          let raw = unwrapLegacyStreamUrl(station.url);
+          station.originalUrl = raw;
+          let out =
+            process.env.NEXT_PUBLIC_STREAM_PROXY_DISABLED === "true"
+              ? raw
+              : playbackStreamUrl(raw);
+          if (typeof out === "string" && out.includes(LEGACY_PROXY_HOST)) {
+            out = unwrapLegacyStreamUrl(out);
+          }
+          station.url = out;
         });
         console.log("Stations loaded", station_result);
         setStationsList(station_result);

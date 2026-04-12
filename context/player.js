@@ -1,5 +1,5 @@
 "use client";
-import React, {useContext, useEffect, useState} from "react";
+import React, {useContext, useEffect, useRef, useState} from "react";
 import {StationContext} from "./station";
 import IcecastMetadataStats from "icecast-metadata-stats";
 import {getTrack, processSongInfo} from "@/lib/utils";
@@ -32,14 +32,21 @@ export const PlayerProvider = ({ children }) => {
         setVolume: () => {},
         switchEndpoint: () => {},
     });
-    const [playerInitialized, setPlayerInitialized] = useState(false);
     const [playerIsLoaded, setPlayerIsLoaded] = useState(false);
+    const playerIsLoadedRef = useRef(false);
+    useEffect(() => {
+        playerIsLoadedRef.current = playerIsLoaded;
+    }, [playerIsLoaded]);
+    const playerVolumeRef = useRef(1);
+    useEffect(() => {
+        playerVolumeRef.current = playerVolume;
+    }, [playerVolume]);
+    const activeIcecastRef = useRef(null);
+    const statsListenerRef = useRef(null);
     const [playerState, setPlayerState] = useState("stopped");
     const [playerVolume, setPlayerVolume] = useState(1);
     const [currentTrack, setCurrentTrack] = useState(DEFAULT_TRACK);
     const [initalTrackLoaded, setInitalTrackLoaded] = useState(false);
-    const [icecastState, setIcecastState] = useState(null);
-    const [icecastPlayer, setIcecastPlayer] = useState(null);
     const changeVolume = (volume) => {
         setPlayerVolume(volume);
         player.setVolume(volume);
@@ -48,12 +55,13 @@ export const PlayerProvider = ({ children }) => {
     const [listeners, setListeners] = useState(null);
     useEffect(() => {
         async function fetchListeners() {
-            const response = await fetch('https://proxy.eternityready.com/listeners');
-            const result = await response.json();
-            console.log('Listeners: ', result);
-
-            if (result) {
-                setListeners(result);
+            try {
+                const response = await fetch("/api/stream-proxy/listeners");
+                if (!response.ok) return;
+                const result = await response.json();
+                if (result) setListeners(result);
+            } catch {
+                /* optional endpoint */
             }
         }
         fetchListeners();
@@ -89,75 +97,113 @@ export const PlayerProvider = ({ children }) => {
         }
     }, [currentPlaying, initalTrackLoaded, station]);
 
-// Initialize Icecast player
+// Initialize Icecast player — must rebuild when station changes (was gated by playerInitialized and never updated URL).
     useEffect(() => {
-        if (station && !playerInitialized) {
-            setPlayerInitialized(true);
-            const initializePlayer = async () => {
-                const {default: IcecastMetadataPlayer} = await import( "icecast-metadata-player" );
+        if (!station?.url) {
+            return;
+        }
 
-                const options = {
-                    lastPlayedMetadata: true,
-                    metadataTypes: ["icy", "ogg"],
-                    onMetadata: (metadata) => {
-                        setCurrentTrack((prevState) => {
-                            if (metadata.StreamTitle === prevState.StreamTitle) {
-                                return {...prevState, StreamTitle: metadata.StreamTitle};
-                            }
+        let cancelled = false;
+
+        const initializePlayer = async () => {
+            const { default: IcecastMetadataPlayer } = await import(
+                "icecast-metadata-player"
+            );
+            if (cancelled) return;
+
+            const sid = station.id;
+            const thumb = station.thumbnail;
+
+            const options = {
+                lastPlayedMetadata: true,
+                metadataTypes: ["icy", "ogg"],
+                onMetadata: (metadata) => {
+                    setCurrentTrack((prevState) => {
+                        if (metadata.StreamTitle === prevState.StreamTitle) {
                             return {
-                                ...DEFAULT_TRACK,
+                                ...prevState,
                                 StreamTitle: metadata.StreamTitle,
-                                stationId: station.id,
-                                artworkURL: station.thumbnail,
                             };
-                        });
-                    },
-                    onError: (error) => {
-                        console.error("ERROR", error);
-                    },
-                };
+                        }
+                        return {
+                            ...DEFAULT_TRACK,
+                            StreamTitle: metadata.StreamTitle,
+                            stationId: sid,
+                            artworkURL: thumb,
+                        };
+                    });
+                },
+                onError: (error) => {
+                    console.error("ERROR", error);
+                },
+            };
 
-                const playerLisner = new IcecastMetadataPlayer(station.url, {...options,});
-                setIcecastPlayer(playerLisner);
-                setPlayer({
-                    play: async () => {
-                        setPlayerState("loading");
-                        await playerLisner.play();
-                        setPlayerState("playing");
-                    },
-                    stop: async () => {
-                        await playerLisner.stop();
-                        setPlayerState("stopped");
-                    },
-                    setVolume: (volume) => {
-                        playerLisner.audioElement.volume = volume;
-                    },
-                    switchEndpoint: async () => {
-                        await playerLisner.stop();
-                        await playerLisner.detachAudioElement();
-                        setPlayerInitialized(false);
-                        setPlayerIsLoaded(true);
-                        setPlayerState("stopped");
-                    },
-                });
-                if (playerIsLoaded) {
+            const playerLisner = new IcecastMetadataPlayer(station.url, {
+                ...options,
+            });
+
+            if (cancelled) {
+                playerLisner.stop();
+                return;
+            }
+
+            activeIcecastRef.current = playerLisner;
+
+            setPlayer({
+                play: async () => {
                     setPlayerState("loading");
                     await playerLisner.play();
-                    playerLisner.audioElement.volume = playerVolume;
                     setPlayerState("playing");
+                },
+                stop: async () => {
+                    await playerLisner.stop();
+                    setPlayerState("stopped");
+                },
+                setVolume: (volume) => {
+                    playerLisner.audioElement.volume = volume;
+                },
+                switchEndpoint: async () => {
+                    const inst = activeIcecastRef.current;
+                    if (inst) {
+                        await inst.stop();
+                        if (typeof inst.detachAudioElement === "function") {
+                            await inst.detachAudioElement();
+                        }
+                    }
+                    setPlayerIsLoaded(true);
+                    setPlayerState("stopped");
+                },
+            });
+
+            if (playerIsLoadedRef.current) {
+                setPlayerState("loading");
+                await playerLisner.play();
+                playerLisner.audioElement.volume = playerVolumeRef.current;
+                setPlayerState("playing");
+            }
+        };
+
+        initializePlayer();
+
+        return () => {
+            cancelled = true;
+            const inst = activeIcecastRef.current;
+            activeIcecastRef.current = null;
+            if (inst) {
+                try {
+                    inst.stop();
+                } catch {
+                    /* ignore */
                 }
             }
-            initializePlayer();
-        }
-        return () => {
-            icecastPlayer && icecastPlayer.stop();
         };
-    }, [station, playerInitialized, playerIsLoaded]);
+    }, [station?.id, station?.url]);
 
 // Update player volume
     useEffect(() => {
-        if (icecastPlayer) {
-            player.setVolume(playerVolume);
+        const inst = activeIcecastRef.current;
+        if (inst?.audioElement) {
+            inst.audioElement.volume = playerVolume;
         }
     }, [playerVolume]);
 
@@ -178,46 +224,54 @@ export const PlayerProvider = ({ children }) => {
         }
     }, [currentTrack]);
 
-// Fetch Icecast stats
+// Fetch Icecast stats (when not playing — avoids duplicating metadata with the live player)
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const statsListener = new IcecastMetadataStats(station.url, {
-                    onStats: async (stats) => {
-                        if (stats?.icy?.StreamTitle) {
-                            setCurrentTrack((prevState) => {
-                                if (stats.icy.StreamTitle === prevState.StreamTitle || (prevState.stationId === station.id && prevState.stationId !== null)) {
-                                    return prevState;
-                                }
-                                return {
-                                    ...DEFAULT_TRACK,
-                                    StreamTitle: stats.icy.StreamTitle,
-                                    stationId: station.id,
-                                    artworkURL: station.thumbnail,
-                                };
-                            });
-                        }
-                    },
-                    onError: (error) => {
-                        console.error("Error fetching stats:", error);
-                    },
-                    interval: 5,
-                    sources: ["icy", "ogg"],
-                });
-                setIcecastState(statsListener);
-                statsListener.start();
-            } catch (error) {
-                console.error("Error fetching stations:", error);
-            }
-        };
-
-        if (station && playerState !== "playing") {
-            fetchStats();
+        if (!station?.url || playerState === "playing") {
+            return;
         }
+
+        const sid = station.id;
+        const thumb = station.thumbnail;
+
+        try {
+            statsListenerRef.current?.stop();
+            const statsListener = new IcecastMetadataStats(station.url, {
+                onStats: async (stats) => {
+                    if (stats?.icy?.StreamTitle) {
+                        setCurrentTrack((prevState) => {
+                            if (
+                                stats.icy.StreamTitle === prevState.StreamTitle ||
+                                (prevState.stationId === sid &&
+                                    prevState.stationId !== null)
+                            ) {
+                                return prevState;
+                            }
+                            return {
+                                ...DEFAULT_TRACK,
+                                StreamTitle: stats.icy.StreamTitle,
+                                stationId: sid,
+                                artworkURL: thumb,
+                            };
+                        });
+                    }
+                },
+                onError: (error) => {
+                    console.error("Error fetching stats:", error);
+                },
+                interval: 5,
+                sources: ["icy", "ogg"],
+            });
+            statsListenerRef.current = statsListener;
+            statsListener.start();
+        } catch (error) {
+            console.error("Error fetching stations:", error);
+        }
+
         return () => {
-            icecastState && icecastState.stop();
+            statsListenerRef.current?.stop();
+            statsListenerRef.current = null;
         };
-    }, [station, playerState]);
+    }, [station?.id, station?.url, playerState]);
 
 // Fetch tracks from the station
     const fetchTracks = async () => {

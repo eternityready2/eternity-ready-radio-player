@@ -4,6 +4,16 @@ import { verifySession } from "./lib/dal";
 const protectedRoutes = ["/admin", "/admin/*"];
 const publicRoutes = ["/auth/*", "/"];
 
+function withNoStoreHtml(response) {
+    // Avoid stale HTML at Cloudflare/edge: old HTML points at old hashed _next chunks (fixes “still broken” after deploy).
+    response.headers.set(
+        "Cache-Control",
+        "no-store, no-cache, must-revalidate, max-age=0"
+    );
+    response.headers.set("CDN-Cache-Control", "no-store");
+    return response;
+}
+
 export default async function middleware(req) {
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set("admin-url", req.url);
@@ -15,11 +25,15 @@ export default async function middleware(req) {
     const session = await verifySession();
 
     if (isProtectedRoute && !session?.isAuth) {
-        return NextResponse.redirect(new URL("/auth/signin", req.nextUrl));
+        return withNoStoreHtml(
+            NextResponse.redirect(new URL("/auth/signin", req.nextUrl))
+        );
     }
 
     if (req.nextUrl.pathname === "/admin" && session?.isAuth) {
-        return NextResponse.redirect(new URL("/admin/station", req.nextUrl));
+        return withNoStoreHtml(
+            NextResponse.redirect(new URL("/admin/station", req.nextUrl))
+        );
     }
 
     if (
@@ -27,14 +41,22 @@ export default async function middleware(req) {
         req.nextUrl.pathname.startsWith("/auth") ||
         req.nextUrl.pathname.startsWith("/api")
     ) {
-        return NextResponse.next({
+        return withNoStoreHtml(
+            NextResponse.next({
+                request: {
+                    headers: requestHeaders,
+                },
+            })
+        );
+    }
+
+    return withNoStoreHtml(
+        NextResponse.next({
             request: {
                 headers: requestHeaders,
             },
-        });
-    }
-
-    return NextResponse.next();
+        })
+    );
 }
 
 // Routes Middleware should not run on
